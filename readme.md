@@ -1,0 +1,1 @@
+build: go build -ldflags="-s -w" -o myapp.exe ./cmd/gui
