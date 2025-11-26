@@ -36,7 +36,7 @@ func OpenFileDialog1() string {
 
 // Функция для создания содержимого вкладки аккордеона с кнопкой копирования
 func createTabContent(text string, win fyne.Window, notifier *Notifier, xmlFileName string) fyne.CanvasObject {
-	// Создаем поле ввода
+	
 	entry := widget.NewMultiLineEntry()
 	entry.SetText(text)
 	entry.SetMinRowsVisible(4)
@@ -75,7 +75,7 @@ func createTabContent(text string, win fyne.Window, notifier *Notifier, xmlFileN
 				return
 			}
 
-			// Сравнение данных
+			// Сравнение
 			matchedRows, err := service.MatchXMLWithXLS(xmlData, xlsRows)
 			if err != nil {
 				fyne.Do(func() {
@@ -84,7 +84,7 @@ func createTabContent(text string, win fyne.Window, notifier *Notifier, xmlFileN
 				return
 			}
 
-			// Создание нового файла
+			// Мутим новый файл
 			err = service.ModifyXLSFile(xlsFile, matchedRows)
 			if err != nil {
 				fyne.Do(func() {
@@ -102,19 +102,17 @@ func createTabContent(text string, win fyne.Window, notifier *Notifier, xmlFileN
 	mergeBtn.Importance = widget.HighImportance
 	mergeBtn.Hide()
 
-	// Создаем кнопку копирования для этой вкладки
+	// кнопка копирования для этой вкладки
 	copyBtn = widget.NewButtonWithIcon("Копировать текст в буфер обмена", theme.ContentCopyIcon(), func() {
 		win.Clipboard().SetContent(entry.Text)
 		notifier.Show("Текст скопирован в буфер обмена")
 		mergeBtn.Show()
 	})
 
-	// Создаем контейнер с двумя кнопками справа
 	buttonsContainer := container.NewGridWithColumns(2,
 		copyBtn,
 		mergeBtn,
 	)
 
-	// Возвращаем контейнер с полем ввода и кнопками
 	return container.NewBorder(nil, buttonsContainer, nil, nil, entry)
 }
