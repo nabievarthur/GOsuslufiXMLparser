@@ -66,7 +66,7 @@ type XLSRow struct {
 	DocumentNumber  string // № документа (из XML)
 }
 
-// ===== УТИЛИТА: формат даты =====
+// меняем дату
 
 func convertDate(d string) string {
 	parts := strings.Split(d, ".")
@@ -126,9 +126,8 @@ func (x *XmlParser) ParseXMLToFile(filename string) (string, error) {
 	return result.String(), nil
 }
 
-// ReadXLSFile читает как настоящие XLS/XLSX, так и HTML-таблицы
 func ReadXLSFile(filename string) ([]XLSRow, error) {
-	// Сначала пробуем открыть как Excel файл
+	// пробуем как excel
 	f, err := excelize.OpenFile(filename)
 	if err != nil {
 		fmt.Printf("Не удалось открыть как Excel, пробуем как HTML: %v\n", err)
@@ -140,7 +139,6 @@ func ReadXLSFile(filename string) ([]XLSRow, error) {
 	// Логика для настоящих Excel файлов
 	rows, err := f.GetRows("Sheet1")
 	if err != nil {
-		// Пробуем другие возможные имена листов
 		sheets := f.GetSheetList()
 		if len(sheets) > 0 {
 			rows, err = f.GetRows(sheets[0])
@@ -155,7 +153,7 @@ func ReadXLSFile(filename string) ([]XLSRow, error) {
 	return parseRowsToXLSRows(rows), nil
 }
 
-// readHTMLTable читает HTML-таблицу из файла
+// читаем  HTML-таблицу из файла
 func readHTMLTable(filename string) ([]XLSRow, error) {
 	data, err := os.ReadFile(filename)
 	if err != nil {
@@ -164,7 +162,6 @@ func readHTMLTable(filename string) ([]XLSRow, error) {
 
 	content := string(data)
 
-	// Регулярка для поиска строк <tr>...</tr>
 	trRegex := regexp.MustCompile(`(?is)<tr[^>]*>(.*?)</tr>`)
 	tdRegex := regexp.MustCompile(`(?is)<t[dh][^>]*>(.*?)</t[dh]>`)
 
@@ -180,7 +177,6 @@ func readHTMLTable(filename string) ([]XLSRow, error) {
 
 		var cells []string
 
-		// Находим все <td> и <th>
 		tds := tdRegex.FindAllStringSubmatch(trContent, -1)
 		for _, td := range tds {
 			text := stripHTML(td[1])
@@ -207,7 +203,7 @@ func stripHTML(s string) string {
 	return re.ReplaceAllString(s, "")
 }
 
-// parseRowsToXLSRows преобразует строки в структуры XLSRow
+//преобразуем строки в структуры XLSRow
 func parseRowsToXLSRows(rows [][]string) []XLSRow {
 	var xlsRows []XLSRow
 
@@ -286,7 +282,6 @@ func MatchXMLWithXLS(xmlData []byte, xlsRows []XLSRow) ([]XLSRow, error) {
 		return nil, err
 	}
 
-	// Создаем карту для быстрого поиска по ФИО и дате
 	xmlMap := make(map[string]string)
 
 	for _, doc := range list.Document {
@@ -326,7 +321,6 @@ func MatchXMLWithXLS(xmlData []byte, xlsRows []XLSRow) ([]XLSRow, error) {
 }
 
 func ModifyXLSFile(filename string, xlsRows []XLSRow) error {
-	// Всегда создаем новый Excel файл с правильным форматом
 	return createNewExcelFile(filename, xlsRows)
 }
 
@@ -388,7 +382,6 @@ func createNewExcelFile(filename string, xlsRows []XLSRow) error {
 		"ЗАГС рег.смерти", "Запретники", "Паспорт РФ", "Реж.высылки",
 	}
 
-	// Запись заголовков на обоих листах
 	for i, header := range headers {
 		cellMain, _ := excelize.CoordinatesToCellName(i+1, 1)
 		cellPos, _ := excelize.CoordinatesToCellName(i+1, 1)
@@ -402,7 +395,7 @@ func createNewExcelFile(filename string, xlsRows []XLSRow) error {
 	posRowIndex := 2
 
 	colIndices := map[string]int{
-		"Розыск лиц": 9, // 1-based
+		"Розыск лиц": 9,
 		"ОСК регион": 10,
 		"ОСК ГИАЦ":   11,
 	}
@@ -449,7 +442,6 @@ func createNewExcelFile(filename string, xlsRows []XLSRow) error {
 		endMain, _ := excelize.CoordinatesToCellName(len(headers), mainRowIndex)
 		if isPositive {
 			f.SetCellStyle(mainSheet, startMain, endMain, highlightStyle)
-			// Повторно выделяем отдельные ячейки "ДА" на жёлтом фоне более тёмным цветом
 			for _, idx := range []int{colIndices["Розыск лиц"], colIndices["ОСК регион"], colIndices["ОСК ГИАЦ"]} {
 				if idx >= 1 && idx <= len(rowData) && rowData[idx-1] == "ДА" {
 					daCell, _ := excelize.CoordinatesToCellName(idx, mainRowIndex)
@@ -464,14 +456,12 @@ func createNewExcelFile(filename string, xlsRows []XLSRow) error {
 				cell, _ := excelize.CoordinatesToCellName(j+1, posRowIndex)
 				f.SetCellValue(positiveSheet, cell, value)
 				f.SetCellStyle(positiveSheet, cell, cell, gridStyle)
-				// На отдельном листе тоже подсвечиваем ячейки "ДА"
 				if (j+1 == colIndices["Розыск лиц"] && value == "ДА") ||
 					(j+1 == colIndices["ОСК регион"] && value == "ДА") ||
 					(j+1 == colIndices["ОСК ГИАЦ"] && value == "ДА") {
 					f.SetCellStyle(positiveSheet, cell, cell, darkDaCellStyle)
 				}
 			}
-			// Весь ряд НЕ окрашиваем в желтый на листе "Положительный результат"
 			posRowIndex++
 		}
 
@@ -487,7 +477,7 @@ func createNewExcelFile(filename string, xlsRows []XLSRow) error {
 
 	now := time.Now()
 	formattedTime := now.Format("02.01.2006_15-04-05")
-	dir := filepath.Dir(filename) // filename - исходный путь к проверяемому файлу
+	dir := filepath.Dir(filename)
 	newFileName := filepath.Join(dir, "goususlugi_"+formattedTime+".xlsx")
 	return f.SaveAs(newFileName)
 }
