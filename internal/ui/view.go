@@ -22,25 +22,25 @@ func BuildUI(win fyne.Window) fyne.CanvasObject {
 
 	label2 := widget.NewLabel("")
 	label2.Hide()
-	// Создаем аккордеон
+	// аккордеон
 	accordion := widget.NewAccordion()
-	accordion.MultiOpen = true // Разрешаем открывать несколько вкладок одновременно
+	accordion.MultiOpen = true 
 
 	separatorWithPadding := container.NewVBox(
-		container.NewWithoutLayout(), // Левый отступ
+		container.NewWithoutLayout(),
 		widget.NewSeparator(),
-		container.NewWithoutLayout(), // Правый отступ
+		container.NewWithoutLayout(),
 	)
 	separatorWithPadding.Hide()
 
 	var prepareBtn *widget.Button
-	//Кнопка подготовления данных из XML в CSV
+	//подготовка данных
 	prepareBtn = widget.NewButtonWithIcon("Подготовить", theme.ConfirmIcon(), func() {
 		notifier.Show("Выполнение...")
 		prepareBtn.Hide()
 
 		go func() {
-			// Парсинг в фоне
+			// Парсим
 			res, err := parser.ParseXMLToFile(label1.Text)
 
 			if err != nil {
@@ -51,10 +51,8 @@ func BuildUI(win fyne.Window) fyne.CanvasObject {
 			}
 
 			fyne.Do(func() {
-				// Очищаем предыдущие результаты
 				accordion.Items = nil
-
-				// Разбиваем результат на строки
+				// Делим на строки
 				lines := strings.Split(strings.TrimSpace(res), "\n")
 				totalLines := len(lines)
 
@@ -69,7 +67,7 @@ func BuildUI(win fyne.Window) fyne.CanvasObject {
 						endLine = totalLines
 					}
 
-					// Создаем текст для текущей вкладки
+					//текст для текущей вкладки
 					tabLines := lines[currentLine:endLine]
 					tabText := strings.Join(tabLines, "\n")
 
@@ -86,7 +84,6 @@ func BuildUI(win fyne.Window) fyne.CanvasObject {
 					currentLine = endLine
 				}
 
-				// Открываем первую вкладку и принудительно обновляем
 				if len(accordion.Items) > 0 {
 					accordion.Items[0].Open = true
 
@@ -100,7 +97,6 @@ func BuildUI(win fyne.Window) fyne.CanvasObject {
 					}()
 				}
 
-				// Показываем информацию
 				label2.SetText(fmt.Sprintf("Всего строк: %d, Вкладок: %d", totalLines, len(accordion.Items)))
 				label2.Show()
 				notifier.Show("Готово! Создано вкладок: " + strconv.Itoa(len(accordion.Items)))
@@ -121,9 +117,8 @@ func BuildUI(win fyne.Window) fyne.CanvasObject {
 		label1.SetText(fileName)
 		prepareBtn.Show()
 
-		// Очищаем предыдущие результаты при выборе нового файла
 		accordion.Items = nil
-		accordion.Refresh() // Обновляем аккордеон после очистки
+		accordion.Refresh()
 		label2.Hide()
 	})
 
